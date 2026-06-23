@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的衣櫃｜AI 穿搭推薦系統</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#0b3a6f">
+</head>
+
+<body>
+    <div class="page">
+        <header class="hero">
+            <div class="hero__content">
+                <div class="user-bar">
+                    <span class="user-name">👤 {{ username }}</span>
+                    <a href="{{ url_for('index') }}" class="btn btn-secondary logout-btn">首頁</a>
+                    <a href="{{ url_for('logout') }}" class="btn btn-secondary logout-btn">登出</a>
+                </div>
+
+                <p class="hero__tag">My Closet</p>
+                <h1>我的衣櫃</h1>
+                <p class="hero__desc">將常穿的上衣與下裝保存起來，之後可以直接從衣櫃挑選搭配。</p>
+            </div>
+        </header>
+
+        <main class="container">
+            <section class="panel">
+                <div class="section-title-wrap">
+                    <h2>新增衣物</h2>
+                    <p>左邊上傳上衣、右邊上傳下裝，可一次多選，最後一起送出。</p>
+                </div>
+
+                {% with messages = get_flashed_messages(with_categories=true) %} {% if messages %}
+                <div class="flash-stack">
+                    {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %} {% endwith %}
+
+                <form method="POST" action="{{ url_for('closet_upload') }}" enctype="multipart/form-data" class="outfit-form">
+                    <div class="upload-grid">
+                        <div class="upload-card">
+                            <label class="upload-label" for="topsInput">上衣</label>
+                            <input id="topsInput" type="file" name="tops" accept=".png,.jpg,.jpeg,.webp" multiple onchange="previewFiles(this, 'topPreview')">
+
+                            <div id="topPreview" class="preview-grid empty">
+                                <p class="empty-text">尚未選擇上衣圖片</p>
+                            </div>
+                        </div>
+
+                        <div class="upload-card">
+                            <label class="upload-label" for="bottomsInput">下裝</label>
+                            <input id="bottomsInput" type="file" name="bottoms" accept=".png,.jpg,.jpeg,.webp" multiple onchange="previewFiles(this, 'bottomPreview')">
+
+                            <div id="bottomPreview" class="preview-grid empty">
+                                <p class="empty-text">尚未選擇下裝圖片</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="button-row" style="justify-content: center;">
+                        <button type="submit" class="btn btn-primary auth-submit" style="max-width: 260px;">
+                            上傳衣物
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="panel">
+                <div class="section-title-wrap">
+                    <h2>上衣</h2>
+                    <p>目前已保存的上衣清單。</p>
+                </div>
+
+                <div class="closet-grid">
+                    {% for item in tops %}
+                    <div class="closet-card">
+                        <div class="closet-image-frame">
+                            <img src="{{ url_for('uploaded_file', filename=item.image_path.replace('uploads/', '')) }}" alt="{{ item.original_filename or 'top' }}">
+                        </div>
+                        <div class="closet-meta">
+                            <h4>{{ item.category or "未知類型" }}</h4>
+                            <p>風格：{{ item.style or "未知" }}</p>
+                            <p>版型：{{ item.fit_label or "未知" }}</p>
+                        </div>
+                        <form method="POST" action="{{ url_for('closet_delete', item_id=item.id) }}">
+                            <button type="submit" class="btn btn-secondary closet-delete-btn">刪除</button>
+                        </form>
+                    </div>
+                    {% else %}
+                    <div class="empty-card">目前還沒有上衣</div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="panel">
+                <div class="section-title-wrap">
+                    <h2>下裝</h2>
+                    <p>目前已保存的下裝清單。</p>
+                </div>
+
+                <div class="closet-grid">
+                    {% for item in bottoms %}
+                    <div class="closet-card">
+                        <div class="closet-image-frame">
+                            <img src="{{ url_for('uploaded_file', filename=item.image_path.replace('uploads/', '')) }}" alt="{{ item.original_filename or 'bottom' }}">
+                        </div>
+                        <div class="closet-meta">
+                            <h4>{{ item.category or "未知類型" }}</h4>
+                            <p>風格：{{ item.style or "未知" }}</p>
+                            <p>版型：{{ item.fit_label or "未知" }}</p>
+                        </div>
+                        <form method="POST" action="{{ url_for('closet_delete', item_id=item.id) }}">
+                            <button type="submit" class="btn btn-secondary closet-delete-btn">刪除</button>
+                        </form>
+                    </div>
+                    {% else %}
+                    <div class="empty-card">目前還沒有下裝</div>
+                    {% endfor %}
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        function previewFiles(input, previewId) {
+            const preview = document.getElementById(previewId);
+            const files = input.files;
+
+            preview.innerHTML = "";
+
+            if (!files || files.length === 0) {
+                preview.classList.add("empty");
+                preview.innerHTML = `<p class="empty-text">尚未選擇圖片</p>`;
+                return;
+            }
+
+            preview.classList.remove("empty");
+
+            Array.from(files).forEach((file) => {
+                if (!file.type.startsWith("image/")) return;
+
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    const item = document.createElement("div");
+                    item.className = "preview-item";
+
+                    item.innerHTML = `
+                        <img src="${e.target.result}" alt="${file.name}">
+                        <div class="preview-meta">
+                            <p class="preview-name">${file.name}</p>
+                            <p class="preview-size">${Math.round(file.size / 1024)} KB</p>
+                        </div>
+                    `;
+
+                    preview.appendChild(item);
+                };
+
+                reader.readAsDataURL(file);
+            });
+        }
+    </script>
+    <script>
+        if ("serviceWorker" in navigator) {
+            window.addEventListener("load", function() {
+                navigator.serviceWorker.register("/static/service-worker.js")
+                    .then(function() {
+                        console.log("Service Worker 註冊成功");
+                    })
+                    .catch(function(error) {
+                        console.log("Service Worker 註冊失敗:", error);
+                    });
+            });
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>註冊｜AI 穿搭推薦系統</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#0b3a6f">
+</head>
+
+<body>
+    <div class="page auth-page">
+        <header class="hero auth-hero">
+            <div class="hero__content auth-hero__content">
+                <p class="hero__tag">AI Outfit Recommendation System</p>
+                <h1>建立你的帳號</h1>
+                <p class="hero__desc">
+                    註冊後即可登入系統，開始使用 AI 穿搭分析與推薦功能。
+                </p>
+            </div>
+        </header>
+
+        <main class="auth-container">
+            <section class="panel auth-card">
+                <div class="section-title-wrap auth-title">
+                    <h2>會員註冊</h2>
+                    <p>請填寫以下資訊建立新帳號。</p>
+                </div>
+
+                {% with messages = get_flashed_messages(with_categories=true) %} {% if messages %}
+                <div class="flash-stack">
+                    {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %} {% endwith %}
+
+                <form method="POST" action="{{ url_for('register') }}" class="auth-form">
+                    <div class="auth-field">
+                        <label for="username">使用者名稱</label>
+                        <input id="username" type="text" name="username" required autocomplete="username">
+                    </div>
+
+                    <div class="auth-field">
+                        <label for="email">Email</label>
+                        <input id="email" type="email" name="email" required autocomplete="email">
+                    </div>
+
+                    <div class="auth-field">
+                        <label for="password">密碼</label>
+                        <input id="password" type="password" name="password" required autocomplete="new-password">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary auth-submit">註冊</button>
+                </form>
+
+                <div class="auth-footer">
+                    <span>已經有帳號？</span>
+                    <a href="{{ url_for('login') }}">前往登入</a>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        if ("serviceWorker" in navigator) {
+            window.addEventListener("load", function() {
+                navigator.serviceWorker.register("/static/service-worker.js")
+                    .then(function() {
+                        console.log("Service Worker 註冊成功");
+                    })
+                    .catch(function(error) {
+                        console.log("Service Worker 註冊失敗:", error);
+                    });
+            });
+        }
+    </script>
+</body>
+
+</html>

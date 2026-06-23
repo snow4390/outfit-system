@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>個人風格分析｜AI 穿搭推薦系統</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <div class="page">
+        <header class="hero">
+            <div class="hero__content">
+                <div class="user-bar">
+                    <span class="user-name">👤 {{ username }}</span>
+                    <a href="{{ url_for('index') }}" class="btn btn-secondary logout-btn">首頁</a>
+                    <a href="{{ url_for('closet') }}" class="btn btn-secondary logout-btn">我的衣櫃</a>
+                    <a href="{{ url_for('logout') }}" class="btn btn-secondary logout-btn">登出</a>
+                </div>
+
+                <p class="hero__tag">Style Profile</p>
+                <h1>個人風格分析</h1>
+                <p class="hero__desc">
+                    系統會根據你衣櫃中的服飾資料，分析你的穿搭風格、單品偏好與版型傾向。
+                </p>
+            </div>
+        </header>
+
+        <main class="container">
+            <section class="panel">
+                <div class="section-title-wrap">
+                    <h2>你的穿搭風格摘要</h2>
+                    <p>目前衣櫃總共有 {{ total }} 件衣物。</p>
+                </div>
+
+                <div class="recommendation-box">
+                    {{ ai_summary }}
+                </div>
+            </section>
+
+            <section class="panel">
+                <div class="section-title-wrap">
+                    <h2>主要風格</h2>
+                    <p>系統根據衣物影像辨識後的風格標籤進行統計。</p>
+                </div>
+
+                <div class="style-summary-card">
+                    <h3>{{ main_style }}</h3>
+                    <p>這是你目前衣櫃中比例最高的風格。</p>
+                </div>
+
+                <div class="analysis-list">
+                    {% for style, percent in style_percent.items() %}
+                    <div class="analysis-item">
+                        <div class="analysis-item-head">
+                            <strong>{{ style }}</strong>
+                            <span>{{ percent }}%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: {{ percent }}%;"></div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="empty-card">目前尚無風格資料</div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="panel">
+                <div class="section-title-wrap">
+                    <h2>常見單品類型</h2>
+                    <p>統計你衣櫃中最常出現的服飾種類。</p>
+                </div>
+
+                <div class="analysis-list">
+                    {% for category, percent in category_percent.items() %}
+                    <div class="analysis-item">
+                        <div class="analysis-item-head">
+                            <strong>{{ category }}</strong>
+                            <span>{{ percent }}%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: {{ percent }}%;"></div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="empty-card">目前尚無單品資料</div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="panel">
+                <div class="section-title-wrap">
+                    <h2>版型偏好</h2>
+                    <p>分析你偏好的服飾版型，例如 regular、slim、oversized。</p>
+                </div>
+
+                <div class="style-summary-card">
+                    <h3>{{ main_fit }}</h3>
+                    <p>這是你目前衣櫃中最常見的版型。</p>
+                </div>
+
+                <div class="analysis-list">
+                    {% for fit, percent in fit_percent.items() %}
+                    <div class="analysis-item">
+                        <div class="analysis-item-head">
+                            <strong>{{ fit }}</strong>
+                            <span>{{ percent }}%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: {{ percent }}%;"></div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="empty-card">目前尚無版型資料</div>
+                    {% endfor %}
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+
+</html>
