@@ -19,10 +19,18 @@ from auth import User, WardrobeItem
 
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "outfit_system_secret_key")
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
+
+database_url = os.getenv(
     "DATABASE_URL",
     "mysql+pymysql://root:@localhost/outfit_system?charset=utf8mb4"
 )
+
+# Railway 的 MySQL 連線常常是 mysql:// 開頭
+# SQLAlchemy 會預設找 MySQLdb，所以要改成 mysql+pymysql://
+if database_url.startswith("mysql://"):
+    database_url = database_url.replace("mysql://", "mysql+pymysql://", 1)
+
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
