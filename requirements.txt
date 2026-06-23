@@ -27,3 +27,4 @@ safetensors
 
 gunicorn
 google-generativeai
+torchvision
