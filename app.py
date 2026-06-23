@@ -368,10 +368,20 @@ def closet_upload():
             final_path = convert_webp_to_jpg(path)
 
             try:
-                info = classify_image(final_path)
-            except Exception as e:
-                print(f"分類失敗: {file.filename}, error={e}")
-                continue
+    info = classify_image(final_path)
+except BaseException as e:
+    print(f"分類失敗: {file.filename}, error={e}")
+    info = {
+        "category": "未知",
+        "style": "休閒風",
+        "fit": {"label": "unknown"},
+        "style_top3": [],
+        "color": {},
+        "pattern": {
+            "label": "solid",
+            "is_solid": True
+        }
+    }e
 
             item = WardrobeItem(
                 user_id=current_user.id,
