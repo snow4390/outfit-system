@@ -1,133 +1,105 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 衣櫃健檢｜AI 穿搭推薦系統</title>
+    <title>衣櫃健檢｜OutfitAI</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#5b5bd6">
 </head>
-
-<body>
-    <div class="page">
-        <header class="hero">
-            <div class="hero__content">
-                <div class="user-bar">
-                    <span class="user-name">👤 {{ username }}</span>
-                    <a href="{{ url_for('index') }}" class="btn btn-secondary logout-btn">首頁</a>
-                    <a href="{{ url_for('closet') }}" class="btn btn-secondary logout-btn">我的衣櫃</a>
-                    <a href="{{ url_for('style_profile') }}" class="btn btn-secondary logout-btn">風格分析</a>
-                    <a href="{{ url_for('logout') }}" class="btn btn-secondary logout-btn">登出</a>
-                </div>
-
-                <p class="hero__tag">Wardrobe Health Check</p>
-                <h1>AI 衣櫃健檢</h1>
-                <p class="hero__desc">
-                    系統會根據你的衣櫃資料，分析服飾比例、風格集中度與版型偏好，提供衣櫃補強建議。
-                </p>
+<body class="app-body">
+    <div class="app-shell">
+        <header class="app-header">
+            <a class="brand" href="{{ url_for('index') }}">
+                <span class="brand-mark">O</span>
+                <span class="brand-copy"><strong>OutfitAI</strong><small>Personal Style Intelligence</small></span>
+            </a>
+            <nav class="desktop-nav">
+                <a class="nav-link" href="{{ url_for('index') }}">AI 搭配</a>
+                <a class="nav-link" href="{{ url_for('closet') }}">我的衣櫃</a>
+                <a class="nav-link" href="{{ url_for('style_profile') }}">風格分析</a>
+                <a class="nav-link active" href="{{ url_for('wardrobe_health') }}">衣櫃健檢</a>
+            </nav>
+            <div class="header-actions">
+                <span class="user-chip"><span class="user-avatar">{{ username[:1] }}</span>{{ username }}</span>
+                <a class="btn btn-secondary" href="{{ url_for('logout') }}">登出</a>
             </div>
         </header>
 
-        <main class="container">
-            <section class="panel">
-                <div class="section-title-wrap">
-                    <h2>衣櫃健康分數</h2>
-                    <p>根據衣物數量、上下裝比例與風格多樣性計算。</p>
+        <main class="app-main">
+            <section class="page-title-row">
+                <div>
+                    <span class="eyebrow dark">Wardrobe health</span>
+                    <h1>你的衣櫃健康報告</h1>
+                    <p>分析衣物數量、上下裝比例、風格多樣性與版型資料，找出可以優化的方向。</p>
                 </div>
-
-                <div class="health-score-card">
-                    <div class="health-score-number">{{ health_score }}</div>
-                    <div class="health-score-label">/ 100</div>
-                    <h3>{{ health_level }}</h3>
-                </div>
+                <div class="button-row"><a class="btn btn-primary" href="{{ url_for('closet') }}">補充衣櫃</a></div>
             </section>
 
-            <section class="panel">
-                <div class="section-title-wrap">
-                    <h2>衣櫃概況</h2>
-                    <p>目前系統已記錄的衣物統計。</p>
-                </div>
-
-                <div class="health-grid">
-                    <div class="health-card">
-                        <span>總衣物數</span>
-                        <strong>{{ total }}</strong>
-                    </div>
-                    <div class="health-card">
-                        <span>上衣數量</span>
-                        <strong>{{ top_count }}</strong>
-                    </div>
-                    <div class="health-card">
-                        <span>下裝數量</span>
-                        <strong>{{ bottom_count }}</strong>
-                    </div>
-                    <div class="health-card">
-                        <span>主要風格</span>
-                        <strong>{{ main_style }}</strong>
-                    </div>
-                    <div class="health-card">
-                        <span>主要版型</span>
-                        <strong>{{ main_fit }}</strong>
-                    </div>
-                </div>
-            </section>
-
-            <section class="panel">
-                <div class="section-title-wrap">
-                    <h2>AI 健檢建議</h2>
-                    <p>根據目前衣櫃狀態自動產生改善方向。</p>
-                </div>
-
-                <div class="suggestion-list">
-                    {% for suggestion in suggestions %}
-                    <div class="suggestion-item">
-                        {{ suggestion }}
-                    </div>
-                    {% endfor %}
-                </div>
-            </section>
-
-            <section class="panel">
-                <div class="section-title-wrap">
-                    <h2>風格分布</h2>
-                    <p>統計衣櫃中各風格出現次數。</p>
-                </div>
-
-                <div class="analysis-list">
-                    {% for style, count in style_count.items() %}
-                    <div class="analysis-item">
-                        <div class="analysis-item-head">
-                            <strong>{{ style }}</strong>
-                            <span>{{ count }} 件</span>
+            <section class="two-col">
+                <article class="profile-card">
+                    <div class="section-title-wrap"><div><span class="section-kicker">Health score</span><h2>整體健康分數</h2><p>分數越高，代表衣櫃結構越完整且具有搭配彈性。</p></div></div>
+                    <div class="health-score-wrap">
+                        <div class="health-score-ring" style="--score: {{ health_score }};">
+                            <div class="health-score-content">
+                                <div class="health-score-number">{{ health_score }}</div>
+                                <div class="health-score-label">/ 100</div>
+                            </div>
                         </div>
+                        <h3>{{ health_level }}</h3>
                     </div>
-                    {% else %}
-                    <div class="empty-card">目前尚無風格資料</div>
-                    {% endfor %}
-                </div>
+                </article>
+
+                <article class="profile-card">
+                    <div class="section-title-wrap"><div><span class="section-kicker">AI diagnosis</span><h2>健檢建議</h2><p>根據現況自動產生的補強方向。</p></div></div>
+                    <div class="suggestion-list">
+                        {% for suggestion in suggestions %}<div class="suggestion-item">{{ suggestion }}</div>{% else %}<div class="empty-card">目前沒有健檢建議</div>{% endfor %}
+                    </div>
+                </article>
             </section>
 
-            <section class="panel">
-                <div class="section-title-wrap">
-                    <h2>常見單品</h2>
-                    <p>統計衣櫃中常見的服飾分類。</p>
-                </div>
+            <section class="health-grid">
+                <article class="health-card"><span>總衣物數</span><strong>{{ total }}</strong></article>
+                <article class="health-card"><span>上衣數量</span><strong>{{ top_count }}</strong></article>
+                <article class="health-card"><span>下裝數量</span><strong>{{ bottom_count }}</strong></article>
+                <article class="health-card"><span>主要風格</span><strong>{{ main_style }}</strong></article>
+            </section>
 
-                <div class="analysis-list">
-                    {% for category, count in category_count.items() %}
-                    <div class="analysis-item">
-                        <div class="analysis-item-head">
-                            <strong>{{ category }}</strong>
-                            <span>{{ count }} 件</span>
-                        </div>
+            <section class="two-col">
+                <article class="profile-card">
+                    <div class="section-title-wrap"><div><span class="section-kicker">Style mix</span><h2>風格分布</h2><p>各風格在目前衣櫃中的件數。</p></div></div>
+                    <div class="analysis-list">
+                        {% for style, count in style_count.items() %}<div class="analysis-item"><div class="analysis-item-head"><strong>{{ style }}</strong><span>{{ count }} 件</span></div></div>{% else %}<div class="empty-card">目前尚無風格資料</div>{% endfor %}
                     </div>
-                    {% else %}
-                    <div class="empty-card">目前尚無單品資料</div>
-                    {% endfor %}
+                </article>
+
+                <article class="profile-card">
+                    <div class="section-title-wrap"><div><span class="section-kicker">Item mix</span><h2>常見單品</h2><p>各服飾分類在衣櫃中的件數。</p></div></div>
+                    <div class="analysis-list">
+                        {% for category, count in category_count.items() %}<div class="analysis-item"><div class="analysis-item-head"><strong>{{ category }}</strong><span>{{ count }} 件</span></div></div>{% else %}<div class="empty-card">目前尚無單品資料</div>{% endfor %}
+                    </div>
+                </article>
+            </section>
+
+            <section class="profile-card">
+                <div class="section-title-wrap"><div><span class="section-kicker">Fit data</span><h2>版型資料概況</h2><p>了解目前衣櫃中不同版型的分布。</p></div></div>
+                <div class="analysis-list">
+                    {% for fit, count in fit_count.items() %}<div class="analysis-item"><div class="analysis-item-head"><strong>{{ fit }}</strong><span>{{ count }} 件</span></div></div>{% else %}<div class="empty-card">目前尚無版型資料</div>{% endfor %}
                 </div>
             </section>
         </main>
-    </div>
-</body>
 
+        <nav class="mobile-nav">
+            <a href="{{ url_for('index') }}"><span>✦</span><span>搭配</span></a>
+            <a href="{{ url_for('closet') }}"><span>▦</span><span>衣櫃</span></a>
+            <a href="{{ url_for('style_profile') }}"><span>◔</span><span>風格</span></a>
+            <a class="active" href="{{ url_for('wardrobe_health') }}"><span>♡</span><span>健檢</span></a>
+        </nav>
+    </div>
+
+    <script>
+        if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("/static/service-worker.js").catch(console.error));
+    </script>
+</body>
 </html>
