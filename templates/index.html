@@ -50,7 +50,7 @@
                                 <label class="closet-pick-card">
                                     <input type="checkbox" name="top_item_ids" value="{{ item.id }}">
                                     <div class="closet-pick-frame">
-                                        <img src="{{ url_for('uploaded_file', filename=item.image_path.replace('uploads/', '')) }}" alt="{{ item.original_filename or 'top' }}">
+                                        <img src="{{ item.image_path }}" alt="{{ item.original_filename or 'top' }}" loading="lazy">
                                     </div>
                                     <div class="closet-pick-meta">
                                         <h5>{{ item.category or "未知類型" }}</h5>
@@ -73,7 +73,7 @@
                                 <label class="closet-pick-card">
                                     <input type="checkbox" name="bottom_item_ids" value="{{ item.id }}">
                                     <div class="closet-pick-frame">
-                                        <img src="{{ url_for('uploaded_file', filename=item.image_path.replace('uploads/', '')) }}" alt="{{ item.original_filename or 'bottom' }}">
+                                        <img src="{{ item.image_path }}" alt="{{ item.original_filename or 'bottom' }}" loading="lazy">
                                     </div>
                                     <div class="closet-pick-meta">
                                         <h5>{{ item.category or "未知類型" }}</h5>
