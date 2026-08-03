@@ -1,76 +1,80 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>登入｜AI 穿搭推薦系統</title>
+    <title>登入｜OutfitAI</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
-    <meta name="theme-color" content="#0b3a6f">
+    <meta name="theme-color" content="#5b5bd6">
 </head>
-
 <body>
-    <div class="page auth-page">
-        <header class="hero auth-hero">
-            <div class="hero__content auth-hero__content">
-                <p class="hero__tag">AI Outfit Recommendation System</p>
-                <h1>歡迎回來</h1>
-                <p class="hero__desc">
-                    登入後即可使用 AI 穿搭分析、搭配排序與建議功能。
-                </p>
+    <main class="auth-layout">
+        <section class="auth-visual">
+            <a class="brand" href="{{ url_for('login') }}">
+                <span class="brand-mark">O</span>
+                <span class="brand-copy">
+                    <strong>OutfitAI</strong>
+                    <small>Personal Style Intelligence</small>
+                </span>
+            </a>
+
+            <div class="auth-copy">
+                <span class="eyebrow">AI-powered wardrobe</span>
+                <h1>讓每一次穿搭，都更像你。</h1>
+                <p>從衣物辨識、搭配評分到個人風格分析，OutfitAI 將你的衣櫃變成真正懂你的智慧造型顧問。</p>
             </div>
-        </header>
 
-        <main class="auth-container">
-            <section class="panel auth-card">
-                <div class="section-title-wrap auth-title">
-                    <h2>會員登入</h2>
-                    <p>請輸入你的 Email 與密碼以進入系統。</p>
+            <div class="auth-feature-grid">
+                <div class="auth-feature"><strong>智慧辨識</strong><span>分類、風格、版型與色彩</span></div>
+                <div class="auth-feature"><strong>個人化推薦</strong><span>根據衣櫃與情境產生搭配</span></div>
+                <div class="auth-feature"><strong>雲端衣櫃</strong><span>跨裝置管理你的服飾資料</span></div>
+            </div>
+        </section>
+
+        <section class="auth-panel">
+            <div class="auth-card">
+                <div class="auth-title">
+                    <span class="section-kicker">Welcome back</span>
+                    <h2>登入 OutfitAI</h2>
+                    <p>繼續管理衣櫃並取得專屬 AI 穿搭建議。</p>
                 </div>
 
-                {% with messages = get_flashed_messages(with_categories=true) %} {% if messages %}
-                <div class="flash-stack">
-                    {% for category, message in messages %}
-                    <div class="flash-message {{ category }}">{{ message }}</div>
-                    {% endfor %}
-                </div>
-                {% endif %} {% endwith %}
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div class="flash-stack">
+                            {% for category, message in messages %}
+                                <div class="flash-message {{ category }}">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
 
                 <form method="POST" action="{{ url_for('login') }}" class="auth-form">
                     <div class="auth-field">
                         <label for="email">Email</label>
-                        <input id="email" type="email" name="email" required autocomplete="email">
+                        <input id="email" type="email" name="email" placeholder="name@example.com" required autocomplete="email">
                     </div>
-
                     <div class="auth-field">
                         <label for="password">密碼</label>
-                        <input id="password" type="password" name="password" required autocomplete="current-password">
+                        <input id="password" type="password" name="password" placeholder="輸入你的密碼" required autocomplete="current-password">
                     </div>
-
                     <button type="submit" class="btn btn-primary auth-submit">登入</button>
                 </form>
 
                 <div class="auth-footer">
-                    <span>還沒有帳號？</span>
-                    <a href="{{ url_for('register') }}">前往註冊</a>
+                    還沒有帳號？ <a href="{{ url_for('register') }}">立即建立帳號</a>
                 </div>
-            </section>
-        </main>
-    </div>
+            </div>
+        </section>
+    </main>
+
     <script>
         if ("serviceWorker" in navigator) {
-            window.addEventListener("load", function() {
-                navigator.serviceWorker.register("/static/service-worker.js")
-                    .then(function() {
-                        console.log("Service Worker 註冊成功");
-                    })
-                    .catch(function(error) {
-                        console.log("Service Worker 註冊失敗:", error);
-                    });
+            window.addEventListener("load", () => {
+                navigator.serviceWorker.register("/static/service-worker.js").catch(console.error);
             });
         }
     </script>
 </body>
-
 </html>
