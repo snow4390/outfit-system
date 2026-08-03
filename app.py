@@ -1,10 +1,15 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, send_from_directory
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_user, logout_user, login_required, current_user
 import os
 import time
 import uuid
+import tempfile
+
+import cloudinary
+import cloudinary.uploader
+from sqlalchemy import inspect, text
 
 from models import classify_image
 from scorer import rank_outfits
@@ -12,13 +17,28 @@ from gemini_api import (
     generate_suggestion_gemini_from_ranked_outfits,
     generate_suggestion_text
 )
-from utils import allowed_file, clean_temp_files, ensure_dir, convert_webp_to_jpg
-from config import UPLOAD_FOLDER, MAX_TOP_K
+from utils import allowed_file, ensure_dir, convert_webp_to_jpg
+from config import MAX_TOP_K
 from database import db, login_manager
 from auth import User, WardrobeItem
 
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "outfit_system_secret_key")
+
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET"),
+    secure=True
+)
+
+
+def cloudinary_is_configured():
+    return all([
+        os.getenv("CLOUDINARY_CLOUD_NAME"),
+        os.getenv("CLOUDINARY_API_KEY"),
+        os.getenv("CLOUDINARY_API_SECRET")
+    ])
 
 database_url = os.getenv(
     "DATABASE_URL",
@@ -32,7 +52,7 @@ if database_url.startswith("mysql://"):
 
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+app.config["UPLOAD_FOLDER"] = os.path.join(tempfile.gettempdir(), "outfit_uploads")
 
 db.init_app(app)
 login_manager.init_app(app)
@@ -40,6 +60,20 @@ login_manager.init_app(app)
 with app.app_context():
     db.create_all()
 
+    # db.create_all() 不會替既有資料表增加新欄位，因此在舊資料表中補上 Cloudinary ID 欄位。
+    inspector = inspect(db.engine)
+    if "wardrobe_items" in inspector.get_table_names():
+        columns = {column["name"] for column in inspector.get_columns("wardrobe_items")}
+        if "cloudinary_public_id" not in columns:
+            db.session.execute(
+                text(
+                    "ALTER TABLE wardrobe_items "
+                    "ADD COLUMN cloudinary_public_id VARCHAR(255) NULL"
+                )
+            )
+            db.session.commit()
+
+# Vercel 僅允許寫入 /tmp；本機也使用系統暫存目錄，分析後會立即清除。
 ensure_dir(app.config["UPLOAD_FOLDER"])
 
 
@@ -63,11 +97,6 @@ def index():
         bottoms=bottoms
     )
 
-
-@app.route("/uploads/<path:filename>")
-@login_required
-def uploaded_file(filename):
-    return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
 
 @app.route("/health", methods=["GET"])
 def health():
@@ -340,15 +369,18 @@ def closet_upload():
     top_files = request.files.getlist("tops")
     bottom_files = request.files.getlist("bottoms")
 
-    user_folder = os.path.join(app.config["UPLOAD_FOLDER"], f"user_{current_user.id}")
-    ensure_dir(user_folder)
-
     uploaded = 0
+    uploaded_public_ids = []
+
     has_top = any(file and file.filename for file in top_files)
     has_bottom = any(file and file.filename for file in bottom_files)
 
     if not has_top and not has_bottom:
         flash("請至少選擇一張上衣或下裝圖片。", "error")
+        return redirect(url_for("closet"))
+
+    if not cloudinary_is_configured():
+        flash("Cloudinary 尚未設定完成，請檢查環境變數。", "error")
         return redirect(url_for("closet"))
 
     def process_files(files, item_type):
@@ -359,53 +391,108 @@ def closet_upload():
                 continue
 
             if not allowed_file(file.filename):
+                print(f"不支援的圖片格式：{file.filename}")
                 continue
 
-            filename = secure_filename(f"{item_type}_{uuid.uuid4().hex}_{file.filename}")
-            path = os.path.join(user_folder, filename)
-            file.save(path)
-
-            final_path = convert_webp_to_jpg(path)
+            safe_name = secure_filename(file.filename) or f"{item_type}.jpg"
+            extension = os.path.splitext(safe_name)[1].lower() or ".jpg"
+            temporary_name = f"{item_type}_{uuid.uuid4().hex}{extension}"
+            temporary_path = os.path.join(app.config["UPLOAD_FOLDER"], temporary_name)
+            final_path = temporary_path
+            public_id = None
 
             try:
-                info = classify_image(final_path)
-            except BaseException as e:
-                print(f"分類失敗: {file.filename}, error={e}")
-                info = {
-                    "category": "未知",
-                    "style": "休閒風",
-                    "fit": {"label": "unknown"},
-                    "style_top3": [],
-                    "color": {},
-                    "pattern": {
-                    "label": "solid",
-                    "is_solid": True
-                        }
-                }
+                file.save(temporary_path)
+                final_path = convert_webp_to_jpg(temporary_path)
 
-            item = WardrobeItem(
-                user_id=current_user.id,
-                item_type=item_type,
-                image_path=final_path.replace("\\", "/"),
-                original_filename=file.filename,
-                category=info.get("category"),
-            style=info.get("style"),
-            fit_label=(info.get("fit") or {}).get("label"),
-            style_top3=info.get("style_top3"),
-            color=info.get("color"),
-            pattern=info.get("pattern")
-            )
+                try:
+                    info = classify_image(final_path)
+                except Exception as error:
+                    print(f"分類失敗：{file.filename}, error={error}")
+                    info = {
+                        "category": "未知",
+                        "style": "casual",
+                        "fit": {"label": "unknown"},
+                        "style_top3": [],
+                        "color": {},
+                        "pattern": {"label": "solid", "is_solid": True}
+                    }
 
-            db.session.add(item)
-            uploaded += 1
+                upload_result = cloudinary.uploader.upload(
+                    final_path,
+                    folder=f"outfit-system/user_{current_user.id}/{item_type}",
+                    resource_type="image",
+                    use_filename=False,
+                    unique_filename=True,
+                    overwrite=False
+                )
+
+                image_url = upload_result.get("secure_url")
+                public_id = upload_result.get("public_id")
+                if not image_url or not public_id:
+                    raise RuntimeError("Cloudinary 未回傳 secure_url 或 public_id")
+
+                uploaded_public_ids.append(public_id)
+
+                item = WardrobeItem(
+                    user_id=current_user.id,
+                    item_type=item_type,
+                    image_path=image_url,
+                    cloudinary_public_id=public_id,
+                    original_filename=file.filename,
+                    category=info.get("category"),
+                    style=info.get("style"),
+                    fit_label=(info.get("fit") or {}).get("label"),
+                    style_top3=info.get("style_top3"),
+                    color=info.get("color"),
+                    pattern=info.get("pattern")
+                )
+                db.session.add(item)
+                uploaded += 1
+
+            except Exception as error:
+                print(f"上傳衣物失敗：{file.filename}, error={error}")
+                if public_id:
+                    try:
+                        cloudinary.uploader.destroy(
+                            public_id, resource_type="image", invalidate=True
+                        )
+                        if public_id in uploaded_public_ids:
+                            uploaded_public_ids.remove(public_id)
+                    except Exception as delete_error:
+                        print(f"清除 Cloudinary 圖片失敗：{delete_error}")
+
+            finally:
+                for path in {temporary_path, final_path}:
+                    try:
+                        if path and os.path.exists(path):
+                            os.remove(path)
+                    except Exception as cleanup_error:
+                        print(f"清除暫存圖片失敗：{cleanup_error}")
 
     process_files(top_files, "top")
     process_files(bottom_files, "bottom")
 
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as error:
+        db.session.rollback()
+        print(f"資料庫儲存失敗：{error}")
+
+        # 資料庫寫入失敗時，清除本次已上傳的 Cloudinary 圖片。
+        for public_id in uploaded_public_ids:
+            try:
+                cloudinary.uploader.destroy(
+                    public_id, resource_type="image", invalidate=True
+                )
+            except Exception as delete_error:
+                print(f"回滾 Cloudinary 圖片失敗：{delete_error}")
+
+        flash("圖片已分析，但衣櫃資料儲存失敗。", "error")
+        return redirect(url_for("closet"))
 
     if uploaded == 0:
-        flash("沒有成功上傳任何衣物，請確認圖片格式是否正確。", "error")
+        flash("沒有成功上傳任何衣物，請確認圖片格式與 Cloudinary 設定。", "error")
     else:
         flash(f"成功上傳 {uploaded} 件衣物", "success")
 
@@ -415,20 +502,34 @@ def closet_upload():
 @app.route("/closet/delete/<int:item_id>", methods=["POST"])
 @login_required
 def closet_delete(item_id):
-    item = WardrobeItem.query.filter_by(id=item_id, user_id=current_user.id).first()
+    item = WardrobeItem.query.filter_by(
+        id=item_id, user_id=current_user.id
+    ).first()
 
     if not item:
         flash("找不到這件衣服。", "error")
         return redirect(url_for("closet"))
 
-    try:
-        if item.image_path and os.path.exists(item.image_path):
-            os.remove(item.image_path)
-    except Exception as e:
-        print(f"刪除衣櫃圖片失敗: {e}")
+    # 先刪資料庫，成功後再刪 Cloudinary；雲端刪除失敗不阻擋衣櫃操作。
+    public_id = item.cloudinary_public_id
 
-    db.session.delete(item)
-    db.session.commit()
+    try:
+        db.session.delete(item)
+        db.session.commit()
+    except Exception as error:
+        db.session.rollback()
+        print(f"刪除衣櫃資料失敗：{error}")
+        flash("衣櫃資料刪除失敗。", "error")
+        return redirect(url_for("closet"))
+
+    if public_id and cloudinary_is_configured():
+        try:
+            result = cloudinary.uploader.destroy(
+                public_id, resource_type="image", invalidate=True
+            )
+            print(f"Cloudinary 刪除結果：{result}")
+        except Exception as error:
+            print(f"刪除 Cloudinary 圖片失敗：{error}")
 
     flash("已從衣櫃刪除。", "success")
     return redirect(url_for("closet"))
