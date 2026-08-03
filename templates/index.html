@@ -1,150 +1,139 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 穿搭工作台｜OutfitAI</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
-    <meta name="theme-color" content="#635bff">
-    <title>AI 智慧搭配｜OutfitAI</title>
+    <meta name="theme-color" content="#5b5bd6">
 </head>
-
 <body class="app-body">
     <div class="app-shell">
         <header class="app-header">
-            <a class="brand" href="{{ url_for('index') }}"><span class="brand-mark">O</span><span><strong>OutfitAI</strong><small>Personal Style Intelligence</small></span></a>
-            <nav class="main-nav">
-                <a class="nav-link active" href="{{ url_for('index') }}"><span>✦</span>AI 搭配</a>
-                <a class="nav-link" href="{{ url_for('closet') }}"><span>▦</span>我的衣櫃</a>
-                <a class="nav-link" href="{{ url_for('style_profile') }}"><span>◒</span>風格分析</a>
-                <a class="nav-link" href="{{ url_for('wardrobe_health') }}"><span>♡</span>衣櫃健檢</a>
+            <a class="brand" href="{{ url_for('index') }}">
+                <span class="brand-mark">O</span>
+                <span class="brand-copy"><strong>OutfitAI</strong><small>Personal Style Intelligence</small></span>
+            </a>
+            <nav class="desktop-nav" aria-label="主要導覽">
+                <a class="nav-link active" href="{{ url_for('index') }}">AI 搭配</a>
+                <a class="nav-link" href="{{ url_for('closet') }}">我的衣櫃</a>
+                <a class="nav-link" href="{{ url_for('style_profile') }}">風格分析</a>
+                <a class="nav-link" href="{{ url_for('wardrobe_health') }}">衣櫃健檢</a>
             </nav>
-            <div class="account-menu"><span class="avatar">{{ username[:1] | upper }}</span>
-                <div class="account-copy"><strong>{{ username }}</strong><small>會員帳號</small></div><a class="icon-btn" href="{{ url_for('logout') }}" title="登出">↗</a></div>
+            <div class="header-actions">
+                <span class="user-chip"><span class="user-avatar">{{ username[:1] }}</span>{{ username }}</span>
+                <a class="btn btn-secondary" href="{{ url_for('logout') }}">登出</a>
+            </div>
         </header>
 
         <main class="app-main">
-            <section class="welcome-banner">
-                <div><span class="eyebrow">AI STYLING STUDIO</span>
-                    <h1>嗨，{{ username }}。<br><span>今天想穿出什麼感覺？</span></h1>
-                    <p>從你的雲端衣櫃挑選單品，OutfitAI 會分析色彩、風格、圖案與版型，產生有依據的搭配建議。</p>
+            <section class="hero-dashboard">
+                <div class="hero-copy">
+                    <span class="eyebrow">AI styling workspace</span>
+                    <h1>今天想穿出什麼感覺？</h1>
+                    <p>從你的雲端衣櫃挑選單品，或直接描述場合與風格，OutfitAI 會完成分析、評分與造型建議。</p>
+                    <div class="hero-actions">
+                        <a class="btn btn-primary" href="#styling-workspace">開始 AI 搭配</a>
+                        <a class="btn btn-ghost-light" href="{{ url_for('closet') }}">新增衣物</a>
+                    </div>
                 </div>
-                <div class="hero-orb" aria-hidden="true"><span>AI</span></div>
+                <aside class="hero-insight">
+                    <div>
+                        <span class="eyebrow">Your wardrobe</span>
+                        <strong>{{ tops|length + bottoms|length }} 件服飾已上雲端</strong>
+                    </div>
+                    <p>目前共有 {{ tops|length }} 件上衣與 {{ bottoms|length }} 件下裝，可組成多種候選搭配。</p>
+                </aside>
             </section>
 
-            <section class="dashboard-stats">
-                <article class="stat-card"><span class="stat-icon violet">▦</span>
-                    <div><small>衣櫃總數</small><strong>{{ tops|length + bottoms|length }}</strong><em>件單品</em></div>
-                </article>
-                <article class="stat-card"><span class="stat-icon blue">↟</span>
-                    <div><small>上衣收藏</small><strong>{{ tops|length }}</strong><em>件上衣</em></div>
-                </article>
-                <article class="stat-card"><span class="stat-icon pink">↡</span>
-                    <div><small>下裝收藏</small><strong>{{ bottoms|length }}</strong><em>件下裝</em></div>
-                </article>
-                <a class="stat-card action-stat" href="{{ url_for('closet') }}"><span class="stat-icon dark">＋</span><div><small>管理衣櫃</small><strong>新增</strong><em>上傳衣物</em></div></a>
+            <section class="dashboard-stats" aria-label="衣櫃摘要">
+                <article class="stat-card"><div class="stat-icon">衣</div><span>上衣收藏</span><strong>{{ tops|length }}</strong></article>
+                <article class="stat-card"><div class="stat-icon">裝</div><span>下裝收藏</span><strong>{{ bottoms|length }}</strong></article>
+                <article class="stat-card"><div class="stat-icon">AI</div><span>推薦模式</span><strong>智慧選擇</strong></article>
+                <article class="stat-card"><div class="stat-icon">雲</div><span>資料狀態</span><strong>已同步</strong></article>
             </section>
 
-            <section class="workspace-card">
+            <section id="styling-workspace" class="workspace-card">
                 <div class="workspace-head">
-                    <div><span class="section-kicker">SMART MATCH</span>
-                        <h2>建立你的搭配</h2>
-                        <p>勾選指定單品；沒有勾選的類別，AI 會從衣櫃自動補足。</p>
-                    </div><span class="step-chip">01 選衣物</span></div>
+                    <div><span class="section-kicker">Styling studio</span><h2>建立本次搭配條件</h2><p>勾選想優先使用的服飾；未勾選的類別將由系統從衣櫃中自動補足。</p></div>
+                    <a class="btn btn-secondary" href="{{ url_for('closet') }}">管理衣櫃</a>
+                </div>
+
                 <form id="outfitForm" class="outfit-form">
                     <div class="closet-pick-grid">
-                        <div class="pick-column">
-                            <div class="column-head">
-                                <div><span>TOPS</span>
-                                    <h3>選擇上衣</h3>
-                                </div><span class="count-pill">{{ tops|length }} 件</span></div>
+                        <section class="pick-column">
+                            <div class="column-head"><h4>我的上衣</h4><span class="count-pill">{{ tops|length }} 件</span></div>
                             <div class="closet-pick-list">
                                 {% for item in tops %}
-                                <label class="closet-pick-card"><input type="checkbox" name="top_item_ids" value="{{ item.id }}"><span class="select-indicator">✓</span><div class="closet-pick-frame"><img src="{{ item.image_path }}" alt="{{ item.original_filename or 'top' }}" loading="lazy"></div><div class="closet-pick-meta"><h5>{{ item.category or '未知類型' }}</h5><div class="tag-row"><span>{{ item.style or '未知風格' }}</span><span>{{ item.fit_label or '未知版型' }}</span></div></div></label>                                {% else %}
-                                <div class="empty-state compact"><span>▦</span>
-                                    <h4>尚無上衣</h4>
-                                    <p>先到衣櫃新增一件上衣。</p>
-                                </div>{% endfor %}
+                                    <label class="closet-pick-card">
+                                        <input type="checkbox" name="top_item_ids" value="{{ item.id }}">
+                                        <div class="closet-pick-frame"><img src="{{ item.image_path }}" alt="{{ item.original_filename or 'top' }}" loading="lazy"></div>
+                                        <div class="closet-pick-meta"><h5>{{ item.category or '未知類型' }}</h5><p>風格：{{ item.style or '未知' }}</p><p>版型：{{ item.fit_label or '未知' }}</p></div>
+                                    </label>
+                                {% else %}
+                                    <div class="empty-card">尚未新增上衣，請先到我的衣櫃上傳。</div>
+                                {% endfor %}
                             </div>
-                        </div>
-                        <div class="pick-column">
-                            <div class="column-head">
-                                <div><span>BOTTOMS</span>
-                                    <h3>選擇下裝</h3>
-                                </div><span class="count-pill">{{ bottoms|length }} 件</span></div>
+                        </section>
+
+                        <section class="pick-column">
+                            <div class="column-head"><h4>我的下裝</h4><span class="count-pill">{{ bottoms|length }} 件</span></div>
                             <div class="closet-pick-list">
                                 {% for item in bottoms %}
-                                <label class="closet-pick-card"><input type="checkbox" name="bottom_item_ids" value="{{ item.id }}"><span class="select-indicator">✓</span><div class="closet-pick-frame"><img src="{{ item.image_path }}" alt="{{ item.original_filename or 'bottom' }}" loading="lazy"></div><div class="closet-pick-meta"><h5>{{ item.category or '未知類型' }}</h5><div class="tag-row"><span>{{ item.style or '未知風格' }}</span><span>{{ item.fit_label or '未知版型' }}</span></div></div></label>                                {% else %}
-                                <div class="empty-state compact"><span>▦</span>
-                                    <h4>尚無下裝</h4>
-                                    <p>先到衣櫃新增一件下裝。</p>
-                                </div>{% endfor %}
+                                    <label class="closet-pick-card">
+                                        <input type="checkbox" name="bottom_item_ids" value="{{ item.id }}">
+                                        <div class="closet-pick-frame"><img src="{{ item.image_path }}" alt="{{ item.original_filename or 'bottom' }}" loading="lazy"></div>
+                                        <div class="closet-pick-meta"><h5>{{ item.category or '未知類型' }}</h5><p>風格：{{ item.style or '未知' }}</p><p>版型：{{ item.fit_label or '未知' }}</p></div>
+                                    </label>
+                                {% else %}
+                                    <div class="empty-card">尚未新增下裝，請先到我的衣櫃上傳。</div>
+                                {% endfor %}
                             </div>
-                        </div>
+                        </section>
                     </div>
-                    <div class="prompt-panel">
-                        <div class="prompt-icon">✦</div>
-                        <div class="prompt-content"><label for="textQuery">告訴 AI 你的穿搭需求</label>
-                            <p>場合、風格、顯瘦需求或想搭配的鞋款都可以。</p><textarea id="textQuery" name="text_query" rows="3" placeholder="例如：明天要約會，想要簡約韓系、顯瘦，搭配白色球鞋。"></textarea></div>
+
+                    <div class="text-input-wrap">
+                        <label for="textQuery">場合與補充需求（可選）</label>
+                        <textarea id="textQuery" name="text_query" rows="4" placeholder="例如：明天要去面試，希望正式但不要太拘謹；或想要顯瘦、偏韓系並搭配白鞋。"></textarea>
                     </div>
-                    <div class="action-bar">
-                        <div id="statusBox" class="status-box info">已準備好，選擇衣物或輸入需求後開始分析。</div><button type="submit" id="submitBtn" class="btn btn-primary btn-large"><span>✦</span>開始 AI 分析</button></div>
+
+                    <div class="button-row">
+                        <button type="submit" id="submitBtn" class="btn btn-primary">開始智慧分析</button>
+                        <button type="button" class="btn btn-secondary" onclick="resetForm()">重新選擇</button>
+                    </div>
                 </form>
             </section>
 
-            <section id="resultSection" class="results-suite hidden">
-                <div class="results-heading">
-                    <div><span class="section-kicker">AI INSIGHT</span>
-                        <h2>你的智慧搭配報告</h2>
-                        <p>模型辨識、規則評分與生成式 AI 建議整合呈現。</p>
-                    </div><span class="step-chip success">02 完成分析</span></div>
-                <div class="result-block surface-card">
-                    <div class="block-title">
-                        <div><span class="block-icon">◎</span>
-                            <div>
-                                <h3>服飾辨識結果</h3>
-                                <p>解析每件單品的風格、版型、圖案與色彩特徵。</p>
-                            </div>
-                        </div>
-                    </div>
+            <section class="panel status-panel">
+                <div class="section-title-wrap"><div><span class="section-kicker">System status</span><h2>分析狀態</h2></div></div>
+                <div id="statusBox" class="status-box info">可自由勾選衣物，或直接輸入補充需求後開始分析。</div>
+            </section>
+
+            <section id="resultSection" class="panel result-panel hidden">
+                <div class="section-title-wrap"><div><span class="section-kicker">AI result</span><h2>專屬搭配報告</h2><p>包含服飾辨識、候選搭配評分、優缺點與 AI 造型建議。</p></div></div>
+
+                <div class="result-block">
+                    <div class="section-title-wrap"><div><h3>服飾辨識結果</h3><p>系統針對實際使用到的服飾提供分類與特徵分析。</p></div></div>
                     <div class="analysis-grid">
-                        <div class="analysis-column">
-                            <div class="column-head">
-                                <h4>上衣分析</h4><span id="topCountBadge" class="badge">0 件</span></div>
-                            <div id="topAnalysisList" class="analysis-list"></div>
-                        </div>
-                        <div class="analysis-column">
-                            <div class="column-head">
-                                <h4>下裝分析</h4><span id="bottomCountBadge" class="badge">0 件</span></div>
-                            <div id="bottomAnalysisList" class="analysis-list"></div>
-                        </div>
+                        <div class="analysis-column"><div class="column-head"><h4>上衣分析</h4><span id="topCountBadge" class="badge">0 件</span></div><div id="topAnalysisList" class="analysis-list"></div></div>
+                        <div class="analysis-column"><div class="column-head"><h4>下裝分析</h4><span id="bottomCountBadge" class="badge">0 件</span></div><div id="bottomAnalysisList" class="analysis-list"></div></div>
                     </div>
                 </div>
-                <div class="result-block surface-card">
-                    <div class="block-title">
-                        <div><span class="block-icon">★</span>
-                            <div>
-                                <h3>推薦搭配排名</h3>
-                                <p>依色彩、風格、圖案與版型規則計算候選組合。</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="rankedOutfitsList" class="ranked-list"></div>
-                </div>
-                <div class="result-block ai-advice-card">
-                    <div class="advice-head"><span>✦</span>
-                        <div><small>OUTFITAI STYLIST</small>
-                            <h3>AI 造型師建議</h3>
-                        </div>
-                    </div>
-                    <div id="recommendationBox" class="recommendation-box"></div>
-                </div>
+
+                <div class="result-block"><div class="section-title-wrap"><div><h3>候選搭配排行</h3><p>依色彩、風格、圖案與版型規則進行排序。</p></div></div><div id="rankedOutfitsList" class="ranked-list"></div></div>
+                <div class="result-block"><div class="section-title-wrap"><div><h3>AI 造型師建議</h3><p>根據評分結果與你的補充需求產生自然語言建議。</p></div></div><div id="recommendationBox" class="recommendation-box"></div></div>
             </section>
         </main>
 
-        <nav class="mobile-nav"><a class="active" href="{{ url_for('index') }}"><span>✦</span>搭配</a><a href="{{ url_for('closet') }}"><span>▦</span>衣櫃</a><a href="{{ url_for('style_profile') }}"><span>◒</span>分析</a><a href="{{ url_for('wardrobe_health') }}"><span>♡</span>健檢</a></nav>
+        <nav class="mobile-nav" aria-label="手機導覽">
+            <a class="active" href="{{ url_for('index') }}"><span>✦</span><span>搭配</span></a>
+            <a href="{{ url_for('closet') }}"><span>▦</span><span>衣櫃</span></a>
+            <a href="{{ url_for('style_profile') }}"><span>◔</span><span>風格</span></a>
+            <a href="{{ url_for('wardrobe_health') }}"><span>♡</span><span>健檢</span></a>
+        </nav>
     </div>
+
     <script src="{{ url_for('static', filename='app.js') }}"></script>
     <script>
         if ("serviceWorker" in navigator) {
@@ -152,5 +141,4 @@
         }
     </script>
 </body>
-
 </html>
