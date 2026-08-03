@@ -1,15 +1,95 @@
-<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"><link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}"><meta name="theme-color" content="#635bff"><title>我的衣櫃｜OutfitAI</title></head>
-<body class="app-body"><div class="app-shell">
-<header class="app-header"><a class="brand" href="{{ url_for('index') }}"><span class="brand-mark">O</span><span><strong>OutfitAI</strong><small>Personal Style Intelligence</small></span></a><nav class="main-nav"><a class="nav-link" href="{{ url_for('index') }}"><span>✦</span>AI 搭配</a><a class="nav-link active" href="{{ url_for('closet') }}"><span>▦</span>我的衣櫃</a><a class="nav-link" href="{{ url_for('style_profile') }}"><span>◒</span>風格分析</a><a class="nav-link" href="{{ url_for('wardrobe_health') }}"><span>♡</span>衣櫃健檢</a></nav><div class="account-menu"><span class="avatar">{{ username[:1] | upper }}</span><div class="account-copy"><strong>{{ username }}</strong><small>會員帳號</small></div><a class="icon-btn" href="{{ url_for('logout') }}">↗</a></div></header>
-<main class="app-main">
-<section class="page-title-row"><div><span class="eyebrow dark">CLOUD WARDROBE</span><h1>我的衣櫃</h1><p>管理已辨識的服飾單品，讓推薦結果更貼近你的真實穿搭。</p></div><a href="#upload-zone" class="btn btn-primary"><span>＋</span>新增衣物</a></section>
-{% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}<div class="flash-stack">{% for category, message in messages %}<div class="flash-message {{ category }}">{{ message }}</div>{% endfor %}</div>{% endif %}{% endwith %}
-<section class="dashboard-stats wardrobe-stats"><article class="stat-card"><span class="stat-icon violet">▦</span><div><small>全部單品</small><strong>{{ tops|length + bottoms|length }}</strong><em>件服飾</em></div></article><article class="stat-card"><span class="stat-icon blue">↟</span><div><small>上衣</small><strong>{{ tops|length }}</strong><em>件收藏</em></div></article><article class="stat-card"><span class="stat-icon pink">↡</span><div><small>下裝</small><strong>{{ bottoms|length }}</strong><em>件收藏</em></div></article></section>
-<section id="upload-zone" class="workspace-card upload-workspace"><div class="workspace-head"><div><span class="section-kicker">ADD ITEMS</span><h2>新增衣物</h2><p>一次可上傳多張圖片，系統會自動分析並保存至雲端衣櫃。</p></div><span class="secure-chip">☁ Cloudinary 雲端儲存</span></div>
-<form method="POST" action="{{ url_for('closet_upload') }}" enctype="multipart/form-data" class="outfit-form"><div class="upload-grid"><div class="upload-card"><div class="upload-card-head"><span class="upload-symbol">↟</span><div><label class="upload-label" for="topsInput">上傳上衣</label><p>支援 JPG、PNG、WEBP</p></div></div><input id="topsInput" type="file" name="tops" accept=".png,.jpg,.jpeg,.webp" multiple onchange="previewFiles(this, 'topPreview')"><label for="topsInput" class="drop-zone"><strong>選擇上衣圖片</strong><span>或拖曳檔案到這裡</span></label><div id="topPreview" class="preview-grid empty"><p class="empty-text">尚未選擇圖片</p></div></div>
-<div class="upload-card"><div class="upload-card-head"><span class="upload-symbol">↡</span><div><label class="upload-label" for="bottomsInput">上傳下裝</label><p>支援 JPG、PNG、WEBP</p></div></div><input id="bottomsInput" type="file" name="bottoms" accept=".png,.jpg,.jpeg,.webp" multiple onchange="previewFiles(this, 'bottomPreview')"><label for="bottomsInput" class="drop-zone"><strong>選擇下裝圖片</strong><span>或拖曳檔案到這裡</span></label><div id="bottomPreview" class="preview-grid empty"><p class="empty-text">尚未選擇圖片</p></div></div></div><div class="upload-submit-row"><p>圖片將經過 AI 辨識後儲存。</p><button type="submit" class="btn btn-primary btn-large">上傳並分析</button></div></form></section>
-<section class="collection-section"><div class="collection-head"><div><span class="section-kicker">TOP COLLECTION</span><h2>上衣收藏</h2></div><span class="count-pill">{{ tops|length }} 件</span></div><div class="wardrobe-grid">{% for item in tops %}<article class="wardrobe-card"><div class="wardrobe-image"><img src="{{ item.image_path }}" alt="{{ item.original_filename or 'top' }}" loading="lazy"><span class="type-chip">上衣</span></div><div class="wardrobe-info"><h3>{{ item.category or '未知類型' }}</h3><div class="tag-row"><span>{{ item.style or '未知風格' }}</span><span>{{ item.fit_label or '未知版型' }}</span></div><form method="POST" action="{{ url_for('closet_delete', item_id=item.id) }}" onsubmit="return confirm('確定要刪除這件衣物嗎？');"><button type="submit" class="text-danger-btn">刪除衣物</button></form></div></article>{% else %}<div class="empty-state wide"><span>↟</span><h3>還沒有上衣</h3><p>上傳第一件上衣，開始建立你的智慧衣櫃。</p></div>{% endfor %}</div></section>
-<section class="collection-section"><div class="collection-head"><div><span class="section-kicker">BOTTOM COLLECTION</span><h2>下裝收藏</h2></div><span class="count-pill">{{ bottoms|length }} 件</span></div><div class="wardrobe-grid">{% for item in bottoms %}<article class="wardrobe-card"><div class="wardrobe-image"><img src="{{ item.image_path }}" alt="{{ item.original_filename or 'bottom' }}" loading="lazy"><span class="type-chip">下裝</span></div><div class="wardrobe-info"><h3>{{ item.category or '未知類型' }}</h3><div class="tag-row"><span>{{ item.style or '未知風格' }}</span><span>{{ item.fit_label or '未知版型' }}</span></div><form method="POST" action="{{ url_for('closet_delete', item_id=item.id) }}" onsubmit="return confirm('確定要刪除這件衣物嗎？');"><button type="submit" class="text-danger-btn">刪除衣物</button></form></div></article>{% else %}<div class="empty-state wide"><span>↡</span><h3>還沒有下裝</h3><p>上傳第一件下裝，增加 AI 的搭配選擇。</p></div>{% endfor %}</div></section>
-</main><nav class="mobile-nav"><a href="{{ url_for('index') }}"><span>✦</span>搭配</a><a class="active" href="{{ url_for('closet') }}"><span>▦</span>衣櫃</a><a href="{{ url_for('style_profile') }}"><span>◒</span>分析</a><a href="{{ url_for('wardrobe_health') }}"><span>♡</span>健檢</a></nav></div>
-<script>function previewFiles(input,previewId){const preview=document.getElementById(previewId),files=input.files;preview.innerHTML="";if(!files||!files.length){preview.classList.add("empty");preview.innerHTML='<p class="empty-text">尚未選擇圖片</p>';return}preview.classList.remove("empty");Array.from(files).forEach(file=>{if(!file.type.startsWith("image/"))return;const reader=new FileReader();reader.onload=e=>{const item=document.createElement("div");item.className="preview-item";item.innerHTML=`<img src="${e.target.result}" alt="${file.name}"><div class="preview-meta"><p>${file.name}</p><span>${Math.round(file.size/1024)} KB</span></div>`;preview.appendChild(item)};reader.readAsDataURL(file)})}</script>
-<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("/static/service-worker.js").catch(console.error));}</script></body></html>
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的衣櫃｜OutfitAI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#5b5bd6">
+</head>
+<body class="app-body">
+    <div class="app-shell">
+        <header class="app-header">
+            <a class="brand" href="{{ url_for('index') }}"><span class="brand-mark">O</span><span class="brand-copy"><strong>OutfitAI</strong><small>Personal Style Intelligence</small></span></a>
+            <nav class="desktop-nav"><a class="nav-link" href="{{ url_for('index') }}">AI 搭配</a><a class="nav-link active" href="{{ url_for('closet') }}">我的衣櫃</a><a class="nav-link" href="{{ url_for('style_profile') }}">風格分析</a><a class="nav-link" href="{{ url_for('wardrobe_health') }}">衣櫃健檢</a></nav>
+            <div class="header-actions"><span class="user-chip"><span class="user-avatar">{{ username[:1] }}</span>{{ username }}</span><a class="btn btn-secondary" href="{{ url_for('logout') }}">登出</a></div>
+        </header>
+
+        <main class="app-main">
+            <section class="page-title-row">
+                <div><span class="eyebrow dark">Cloud wardrobe</span><h1>我的衣櫃</h1><p>管理已辨識的服飾單品，讓推薦結果更貼近你的真實穿搭。</p></div>
+                <div class="button-row"><a class="btn btn-primary" href="#upload-zone">＋ 新增衣物</a></div>
+            </section>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}<div class="flash-stack">{% for category, message in messages %}<div class="flash-message {{ category }}">{{ message }}</div>{% endfor %}</div>{% endif %}
+            {% endwith %}
+
+            <section class="dashboard-stats">
+                <article class="stat-card"><div class="stat-icon">全</div><span>全部單品</span><strong>{{ tops|length + bottoms|length }}</strong></article>
+                <article class="stat-card"><div class="stat-icon">上</div><span>上衣</span><strong>{{ tops|length }}</strong></article>
+                <article class="stat-card"><div class="stat-icon">下</div><span>下裝</span><strong>{{ bottoms|length }}</strong></article>
+                <article class="stat-card"><div class="stat-icon">雲</div><span>儲存位置</span><strong>Cloud</strong></article>
+            </section>
+
+            <section id="upload-zone" class="workspace-card">
+                <div class="workspace-head"><div><span class="section-kicker">Add items</span><h2>新增衣物</h2><p>可一次選擇多張上衣與下裝圖片，系統會自動辨識並儲存至雲端。</p></div></div>
+                <form method="POST" action="{{ url_for('closet_upload') }}" enctype="multipart/form-data" class="outfit-form">
+                    <div class="upload-grid">
+                        <div class="upload-card"><label class="upload-label" for="topsInput">上衣圖片</label><input id="topsInput" type="file" name="tops" accept=".png,.jpg,.jpeg,.webp" multiple onchange="previewFiles(this, 'topPreview')"><div id="topPreview" class="preview-grid empty"><p class="empty-text">尚未選擇上衣圖片</p></div></div>
+                        <div class="upload-card"><label class="upload-label" for="bottomsInput">下裝圖片</label><input id="bottomsInput" type="file" name="bottoms" accept=".png,.jpg,.jpeg,.webp" multiple onchange="previewFiles(this, 'bottomPreview')"><div id="bottomPreview" class="preview-grid empty"><p class="empty-text">尚未選擇下裝圖片</p></div></div>
+                    </div>
+                    <div class="button-row"><button type="submit" class="btn btn-primary">上傳並執行 AI 辨識</button></div>
+                </form>
+            </section>
+
+            <section class="collection-section">
+                <div class="collection-head"><div><span class="section-kicker">Top collection</span><h2>上衣收藏</h2><p>已辨識並儲存的上衣單品。</p></div><span class="count-pill">{{ tops|length }} 件</span></div>
+                <div class="closet-grid">
+                    {% for item in tops %}
+                        <article class="closet-card"><div class="closet-image-frame"><img src="{{ item.image_path }}" alt="{{ item.original_filename or 'top' }}" loading="lazy"></div><div class="closet-meta"><h4>{{ item.category or '未知類型' }}</h4><p>風格：{{ item.style or '未知' }}</p><p>版型：{{ item.fit_label or '未知' }}</p></div><form method="POST" action="{{ url_for('closet_delete', item_id=item.id) }}" onsubmit="return confirm('確定要刪除這件衣物嗎？');"><button type="submit" class="btn btn-danger closet-delete-btn">刪除單品</button></form></article>
+                    {% else %}<div class="empty-card">目前還沒有上衣，從上方開始新增第一件單品。</div>{% endfor %}
+                </div>
+            </section>
+
+            <section class="collection-section">
+                <div class="collection-head"><div><span class="section-kicker">Bottom collection</span><h2>下裝收藏</h2><p>已辨識並儲存的下裝單品。</p></div><span class="count-pill">{{ bottoms|length }} 件</span></div>
+                <div class="closet-grid">
+                    {% for item in bottoms %}
+                        <article class="closet-card"><div class="closet-image-frame"><img src="{{ item.image_path }}" alt="{{ item.original_filename or 'bottom' }}" loading="lazy"></div><div class="closet-meta"><h4>{{ item.category or '未知類型' }}</h4><p>風格：{{ item.style or '未知' }}</p><p>版型：{{ item.fit_label or '未知' }}</p></div><form method="POST" action="{{ url_for('closet_delete', item_id=item.id) }}" onsubmit="return confirm('確定要刪除這件衣物嗎？');"><button type="submit" class="btn btn-danger closet-delete-btn">刪除單品</button></form></article>
+                    {% else %}<div class="empty-card">目前還沒有下裝，從上方開始新增第一件單品。</div>{% endfor %}
+                </div>
+            </section>
+        </main>
+
+        <nav class="mobile-nav"><a href="{{ url_for('index') }}"><span>✦</span><span>搭配</span></a><a class="active" href="{{ url_for('closet') }}"><span>▦</span><span>衣櫃</span></a><a href="{{ url_for('style_profile') }}"><span>◔</span><span>風格</span></a><a href="{{ url_for('wardrobe_health') }}"><span>♡</span><span>健檢</span></a></nav>
+    </div>
+
+    <script>
+        function previewFiles(input, previewId) {
+            const preview = document.getElementById(previewId);
+            const files = input.files;
+            preview.innerHTML = "";
+            if (!files || files.length === 0) {
+                preview.classList.add("empty");
+                preview.innerHTML = '<p class="empty-text">尚未選擇圖片</p>';
+                return;
+            }
+            preview.classList.remove("empty");
+            Array.from(files).forEach((file) => {
+                if (!file.type.startsWith("image/")) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const item = document.createElement("div");
+                    item.className = "preview-item";
+                    item.innerHTML = `<img src="${event.target.result}" alt="${file.name}"><div class="preview-meta"><p class="preview-name">${file.name}</p><p class="preview-size">${Math.round(file.size / 1024)} KB</p></div>`;
+                    preview.appendChild(item);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+        if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("/static/service-worker.js").catch(console.error));
+    </script>
+</body>
+</html>
