@@ -4,7 +4,14 @@ import os
 from config import VIT_MODEL_NAME, CLIP_MODEL_NAME, STYLE_LABELS, TOP_K_STYLE
 from color_analyzer import extract_color_features
 
-IS_RAILWAY = os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("RAILWAY_PROJECT_ID")
+IS_RAILWAY = bool(
+    os.getenv("RAILWAY_ENVIRONMENT")
+    or os.getenv("RAILWAY_PROJECT_ID")
+)
+
+IS_VERCEL = bool(os.getenv("VERCEL"))
+
+IS_CLOUD = IS_RAILWAY or IS_VERCEL
 
 vit_processor = None
 vit_model = None
@@ -12,7 +19,7 @@ clip_processor = None
 clip_model = None
 device = "cpu"
 
-if not IS_RAILWAY:
+if not IS_CLOUD:
     try:
         import torch
         from transformers import (
@@ -39,8 +46,7 @@ if not IS_RAILWAY:
     except Exception as e:
         print(f"Hugging Face 模型載入失敗: {e}")
 else:
-    print("Railway 環境：已自動啟用輕量展示模式，不載入 Hugging Face 模型。")
-
+     print("Cloud 環境：已啟用輕量展示模式，不載入 Hugging Face 模型。")
 
 def default_result():
     return {
