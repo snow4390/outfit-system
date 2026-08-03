@@ -1,124 +1,108 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>個人風格分析｜AI 穿搭推薦系統</title>
+    <title>個人風格分析｜OutfitAI</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#5b5bd6">
 </head>
-
-<body>
-    <div class="page">
-        <header class="hero">
-            <div class="hero__content">
-                <div class="user-bar">
-                    <span class="user-name">👤 {{ username }}</span>
-                    <a href="{{ url_for('index') }}" class="btn btn-secondary logout-btn">首頁</a>
-                    <a href="{{ url_for('closet') }}" class="btn btn-secondary logout-btn">我的衣櫃</a>
-                    <a href="{{ url_for('logout') }}" class="btn btn-secondary logout-btn">登出</a>
-                </div>
-
-                <p class="hero__tag">Style Profile</p>
-                <h1>個人風格分析</h1>
-                <p class="hero__desc">
-                    系統會根據你衣櫃中的服飾資料，分析你的穿搭風格、單品偏好與版型傾向。
-                </p>
+<body class="app-body">
+    <div class="app-shell">
+        <header class="app-header">
+            <a class="brand" href="{{ url_for('index') }}">
+                <span class="brand-mark">O</span>
+                <span class="brand-copy"><strong>OutfitAI</strong><small>Personal Style Intelligence</small></span>
+            </a>
+            <nav class="desktop-nav">
+                <a class="nav-link" href="{{ url_for('index') }}">AI 搭配</a>
+                <a class="nav-link" href="{{ url_for('closet') }}">我的衣櫃</a>
+                <a class="nav-link active" href="{{ url_for('style_profile') }}">風格分析</a>
+                <a class="nav-link" href="{{ url_for('wardrobe_health') }}">衣櫃健檢</a>
+            </nav>
+            <div class="header-actions">
+                <span class="user-chip"><span class="user-avatar">{{ username[:1] }}</span>{{ username }}</span>
+                <a class="btn btn-secondary" href="{{ url_for('logout') }}">登出</a>
             </div>
         </header>
 
-        <main class="container">
-            <section class="panel">
-                <div class="section-title-wrap">
-                    <h2>你的穿搭風格摘要</h2>
-                    <p>目前衣櫃總共有 {{ total }} 件衣物。</p>
+        <main class="app-main">
+            <section class="page-title-row">
+                <div>
+                    <span class="eyebrow dark">Style intelligence</span>
+                    <h1>你的個人風格輪廓</h1>
+                    <p>OutfitAI 根據衣櫃中的 {{ total }} 件衣物，整理風格、單品與版型偏好。</p>
                 </div>
-
-                <div class="recommendation-box">
-                    {{ ai_summary }}
-                </div>
+                <div class="button-row"><a class="btn btn-primary" href="{{ url_for('closet') }}">新增更多衣物</a></div>
             </section>
 
-            <section class="panel">
-                <div class="section-title-wrap">
-                    <h2>主要風格</h2>
-                    <p>系統根據衣物影像辨識後的風格標籤進行統計。</p>
-                </div>
+            <section class="profile-overview">
+                <article class="stat-card"><div class="stat-icon">風</div><span>主要風格</span><strong>{{ main_style }}</strong></article>
+                <article class="stat-card"><div class="stat-icon">型</div><span>偏好版型</span><strong>{{ main_fit }}</strong></article>
+                <article class="stat-card"><div class="stat-icon">衣</div><span>分析樣本</span><strong>{{ total }}</strong></article>
+                <article class="stat-card"><div class="stat-icon">AI</div><span>分析狀態</span><strong>完成</strong></article>
+            </section>
 
-                <div class="style-summary-card">
+            <section class="profile-card">
+                <div class="section-title-wrap">
+                    <div><span class="section-kicker">AI summary</span><h2>風格摘要</h2><p>根據目前衣櫃資料產生的個人化解讀。</p></div>
+                </div>
+                <div class="profile-highlight">
                     <h3>{{ main_style }}</h3>
-                    <p>這是你目前衣櫃中比例最高的風格。</p>
-                </div>
-
-                <div class="analysis-list">
-                    {% for style, percent in style_percent.items() %}
-                    <div class="analysis-item">
-                        <div class="analysis-item-head">
-                            <strong>{{ style }}</strong>
-                            <span>{{ percent }}%</span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: {{ percent }}%;"></div>
-                        </div>
-                    </div>
-                    {% else %}
-                    <div class="empty-card">目前尚無風格資料</div>
-                    {% endfor %}
+                    <p>{{ ai_summary }}</p>
                 </div>
             </section>
 
-            <section class="panel">
-                <div class="section-title-wrap">
-                    <h2>常見單品類型</h2>
-                    <p>統計你衣櫃中最常出現的服飾種類。</p>
-                </div>
+            <section class="two-col">
+                <article class="profile-card">
+                    <div class="section-title-wrap"><div><span class="section-kicker">Style distribution</span><h2>風格分布</h2></div></div>
+                    <div class="analysis-list">
+                        {% for style, percent in style_percent.items() %}
+                            <div class="analysis-item">
+                                <div class="analysis-item-head"><strong>{{ style }}</strong><span>{{ percent }}%</span></div>
+                                <div class="progress-bar"><div class="progress-fill" style="width: {{ percent }}%;"></div></div>
+                            </div>
+                        {% else %}<div class="empty-card">目前尚無風格資料</div>{% endfor %}
+                    </div>
+                </article>
 
+                <article class="profile-card">
+                    <div class="section-title-wrap"><div><span class="section-kicker">Fit preference</span><h2>版型偏好</h2></div></div>
+                    <div class="analysis-list">
+                        {% for fit, percent in fit_percent.items() %}
+                            <div class="analysis-item">
+                                <div class="analysis-item-head"><strong>{{ fit }}</strong><span>{{ percent }}%</span></div>
+                                <div class="progress-bar"><div class="progress-fill" style="width: {{ percent }}%;"></div></div>
+                            </div>
+                        {% else %}<div class="empty-card">目前尚無版型資料</div>{% endfor %}
+                    </div>
+                </article>
+            </section>
+
+            <section class="profile-card">
+                <div class="section-title-wrap"><div><span class="section-kicker">Wardrobe composition</span><h2>常見單品類型</h2><p>了解衣櫃中各類服飾的組成比例。</p></div></div>
                 <div class="analysis-list">
                     {% for category, percent in category_percent.items() %}
-                    <div class="analysis-item">
-                        <div class="analysis-item-head">
-                            <strong>{{ category }}</strong>
-                            <span>{{ percent }}%</span>
+                        <div class="analysis-item">
+                            <div class="analysis-item-head"><strong>{{ category }}</strong><span>{{ percent }}%</span></div>
+                            <div class="progress-bar"><div class="progress-fill" style="width: {{ percent }}%;"></div></div>
                         </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: {{ percent }}%;"></div>
-                        </div>
-                    </div>
-                    {% else %}
-                    <div class="empty-card">目前尚無單品資料</div>
-                    {% endfor %}
-                </div>
-            </section>
-
-            <section class="panel">
-                <div class="section-title-wrap">
-                    <h2>版型偏好</h2>
-                    <p>分析你偏好的服飾版型，例如 regular、slim、oversized。</p>
-                </div>
-
-                <div class="style-summary-card">
-                    <h3>{{ main_fit }}</h3>
-                    <p>這是你目前衣櫃中最常見的版型。</p>
-                </div>
-
-                <div class="analysis-list">
-                    {% for fit, percent in fit_percent.items() %}
-                    <div class="analysis-item">
-                        <div class="analysis-item-head">
-                            <strong>{{ fit }}</strong>
-                            <span>{{ percent }}%</span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: {{ percent }}%;"></div>
-                        </div>
-                    </div>
-                    {% else %}
-                    <div class="empty-card">目前尚無版型資料</div>
-                    {% endfor %}
+                    {% else %}<div class="empty-card">目前尚無單品資料</div>{% endfor %}
                 </div>
             </section>
         </main>
-    </div>
-</body>
 
+        <nav class="mobile-nav">
+            <a href="{{ url_for('index') }}"><span>✦</span><span>搭配</span></a>
+            <a href="{{ url_for('closet') }}"><span>▦</span><span>衣櫃</span></a>
+            <a class="active" href="{{ url_for('style_profile') }}"><span>◔</span><span>風格</span></a>
+            <a href="{{ url_for('wardrobe_health') }}"><span>♡</span><span>健檢</span></a>
+        </nav>
+    </div>
+
+    <script>
+        if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("/static/service-worker.js").catch(console.error));
+    </script>
+</body>
 </html>
