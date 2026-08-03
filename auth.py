@@ -17,7 +17,8 @@ class WardrobeItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     item_type = db.Column(db.String(20), nullable=False)   # top / bottom
-    image_path = db.Column(db.String(255), nullable=False)
+    image_path = db.Column(db.String(500), nullable=False)
+    cloudinary_public_id = db.Column(db.String(255), nullable=True)
     original_filename = db.Column(db.String(255), nullable=True)
 
 
