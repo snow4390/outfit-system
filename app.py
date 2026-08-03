@@ -52,7 +52,27 @@ if database_url.startswith("mysql://"):
 
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["UPLOAD_FOLDER"] = os.path.join(tempfile.gettempdir(), "outfit_uploads")
+
+# 避免 Vercel 重複使用已被 TiDB / MySQL 關閉的舊連線。
+# pool_pre_ping 會在每次取用連線前先測試連線是否仍然有效；
+# pool_recycle 則會定期淘汰過舊連線，降低 Serverless 環境的斷線機率。
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_pre_ping": True,
+    "pool_recycle": 240,
+    "pool_size": 2,
+    "max_overflow": 1,
+    "pool_timeout": 30,
+    "connect_args": {
+        "connect_timeout": 15,
+        "read_timeout": 60,
+        "write_timeout": 60,
+    },
+}
+
+app.config["UPLOAD_FOLDER"] = os.path.join(
+    tempfile.gettempdir(),
+    "outfit_uploads",
+)
 
 db.init_app(app)
 login_manager.init_app(app)
