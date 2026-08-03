@@ -173,8 +173,8 @@ function renderRankedOutfitCard(outfit, index) {
     const score = outfit.score ?? 0;
     const scoreInfo = getScoreLevel(score);
 
-    const topImage = topItem.image_path ? `/${topItem.image_path}` : "";
-    const bottomImage = bottomItem.image_path ? `/${bottomItem.image_path}` : "";
+    const topImage = topItem.image_path || "";
+    const bottomImage = bottomItem.image_path || "";
 
     return `
         <div class="rank-card">
